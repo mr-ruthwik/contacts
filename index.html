@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Contact Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+
+    <div class="container">
+        <div id="statusMessage" class="hidden"></div>
+
+        <div id="welcome" class="card">
+            <h1><i class="fas fa-address-book"></i> Contact Management System</h1>
+            <div class="nav-buttons">
+                <button onclick="showSection('add')"><i class="fas fa-plus"></i> Add</button>
+                <button onclick="showSection('update')"><i class="fas fa-edit"></i> Update</button>
+                <button onclick="showSection('delete')"><i class="fas fa-trash"></i> Delete</button>
+                <button onclick="showSection('list')"><i class="fas fa-list"></i> View All</button>
+            </div>
+        </div>
+
+        <div id="add" class="card hidden">
+            <h2><i class="fas fa-plus"></i> Add Contact</h2>
+            <input id="name" placeholder="Name"><input id="mobile" placeholder="Mobile"><input id="mail"
+                placeholder="Email">
+            <button onclick="addContact()">Save</button>
+            <button class="back-btn" onclick="showSection('welcome')"><i class="fas fa-arrow-left"></i> Back</button>
+        </div>
+
+        <div id="update" class="card hidden">
+            <h2><i class="fas fa-edit"></i> Update Contact</h2>
+            <input id="oldMobile" placeholder="Old Mobile"><input id="newMobile" placeholder="New Mobile">
+            <button onclick="updateContact()">Update</button>
+            <button class="back-btn" onclick="showSection('welcome')"><i class="fas fa-arrow-left"></i> Back</button>
+        </div>
+
+        <div id="delete" class="card hidden">
+            <h2><i class="fas fa-trash"></i> Delete Contact</h2>
+            <input id="deleteMobile" placeholder="Mobile Number">
+            <button onclick="deleteContact()">Delete</button>
+            <button class="back-btn" onclick="showSection('welcome')"><i class="fas fa-arrow-left"></i> Back</button>
+        </div>
+
+        <div id="list" class="card hidden">
+            <h2><i class="fas fa-list"></i> Contacts List</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Mobile</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody id="contactTable"></tbody>
+            </table>
+            <button class="back-btn" onclick="showSection('welcome')"><i class="fas fa-arrow-left"></i> Back</button>
+        </div>
+    </div>
+
+    <script>
+        function showSection(id) {
+            document.querySelectorAll('.card').forEach(c => c.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            if (id === 'list') fetchContacts();
+        }
+
+        async function fetchContacts() {
+            const res = await fetch('/contacts');
+            const data = await res.json();
+            const tbody = document.getElementById('contactTable');
+            tbody.innerHTML = '';
+            for (const [mobile, info] of Object.entries(data)) {
+                tbody.innerHTML += `<tr><td>${info[0]}</td><td>${mobile}</td><td>${info[1]}</td></tr>`;
+            }
+        }
+
+        // This function now correctly accepts the 'successMsg'
+        async function performAction(url, data, inputIds, successMsg) {
+            await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            // Clear inputs
+            inputIds.forEach(id => document.getElementById(id).value = '');
+
+            // Use the specific message provided
+            const msg = document.getElementById('statusMessage');
+            msg.innerText = "✅ " + successMsg;
+            msg.className = "popup-msg";
+            setTimeout(() => msg.className = "hidden", 3000);
+        }
+
+        // Calls with specific messages
+        function addContact() { performAction('/add', { name: document.getElementById('name').value, mobile: document.getElementById('mobile').value, mail: document.getElementById('mail').value }, ['name', 'mobile', 'mail'], 'Contact created successfully!'); }
+        function updateContact() { performAction('/update', { old_mobile: document.getElementById('oldMobile').value, new_mobile: document.getElementById('newMobile').value }, ['oldMobile', 'newMobile'], 'Contact updated successfully!'); }
+        function deleteContact() { performAction('/delete', { mobile: document.getElementById('deleteMobile').value }, ['deleteMobile'], 'Contact deleted successfully!'); }
+    </script>
+</body>
+
+</html>
